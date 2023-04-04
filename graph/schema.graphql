@@ -1,0 +1,33 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Item {
+  id: ID!
+  name: String
+  rating: Int
+  category: Category
+  image: String
+  price: Int
+  availibility: Int
+  Reputation: Int
+
+  Creator: User
+}
+
+enum Category {
+  photo
+  sketch
+  cartoon
+  animation
+}
+
+type User {
+  id: ID!
+  username: String
+  email: String
+}
+
+type Query {
+  items: [Item!]!
+}
