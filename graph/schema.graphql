@@ -57,10 +57,28 @@ input CreateItem {
   availibility: Int 
 }
 
+input UpdateItem {
+  name: String
+  rating: Int
+  category: String
+  image: String
+  reputation: Int
+  price: Int
+  availibility: Int 
+}
+
 type Query {
   items(filter: Filter): [Item!]!
+  item(id: ID!): Item
+}
+
+type Message {
+  message: String!
 }
 
 type Mutation {
   createItem(creatorId: ID!, input: CreateItem!): Item!
+  updateItem(id: ID!, input: UpdateItem!): Item!
+  deleteItem(id: ID!): Message!
+  purchaseItem(buyId: ID!, itemId: ID!): Message!
 }

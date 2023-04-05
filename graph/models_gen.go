@@ -39,6 +39,10 @@ type Item struct {
 	Creator         *User       `json:"creator,omitempty"`
 }
 
+type Message struct {
+	Message string `json:"message"`
+}
+
 type RangeInput struct {
 	Gte *int `json:"gte,omitempty"`
 	Lte *int `json:"lte,omitempty"`
@@ -47,6 +51,16 @@ type RangeInput struct {
 type Reputation struct {
 	Badge *string `json:"badge,omitempty"`
 	Value *int    `json:"Value,omitempty"`
+}
+
+type UpdateItem struct {
+	Name         *string `json:"name,omitempty"`
+	Rating       *int    `json:"rating,omitempty"`
+	Category     *string `json:"category,omitempty"`
+	Image        *string `json:"image,omitempty"`
+	Reputation   *int    `json:"reputation,omitempty"`
+	Price        *int    `json:"price,omitempty"`
+	Availibility *int    `json:"availibility,omitempty"`
 }
 
 type User struct {

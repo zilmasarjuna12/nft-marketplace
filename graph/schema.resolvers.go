@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -57,6 +58,83 @@ func (r *mutationResolver) CreateItem(ctx context.Context, creatorID string, inp
 	return itemRes, nil
 }
 
+// UpdateItem is the resolver for the updateItem field.
+func (r *mutationResolver) UpdateItem(ctx context.Context, id string, input UpdateItem) (*Item, error) {
+	var (
+		itemRes *Item
+	)
+
+	queryInput := NewItemUpdate(input)
+
+	errs := queryInput.Validate(ctx)
+
+	if errs != nil {
+		return nil, nil
+	}
+
+	item, err := r.itemUsecase.Update(ctx, id, queryInput.ItemUpdate)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+	}
+
+	itemRes = &Item{
+		ID:       item.ID.String(),
+		Name:     &item.Name,
+		Rating:   &item.Rating,
+		Category: (*Category)(&item.Category),
+		Image:    &item.Image,
+		Reputation: &Reputation{
+			Badge: &item.ReputationBadge,
+			Value: &item.ReputationValue,
+		},
+		ReputationBadge: &item.ReputationBadge,
+		Price:           &item.Price,
+		Availibility:    &item.Availibility,
+		Creator: &User{
+			ID:       item.Creator.ID.String(),
+			Username: &item.Creator.Username,
+			Email:    &item.Creator.Email,
+		},
+	}
+
+	return itemRes, nil
+}
+
+// DeleteItem is the resolver for the deleteItem field.
+func (r *mutationResolver) DeleteItem(ctx context.Context, id string) (*Message, error) {
+	var (
+		messageRes *Message
+	)
+
+	err := r.itemUsecase.Delete(ctx, id)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+
+		return nil, nil
+	}
+
+	messageRes = &Message{
+		Message: "Success",
+	}
+
+	return messageRes, nil
+}
+
+// PurchaseItem is the resolver for the purchaseItem field.
+func (r *mutationResolver) PurchaseItem(ctx context.Context, buyID string, itemID string) (*Message, error) {
+	panic(fmt.Errorf("not implemented: PurchaseItem - purchaseItem"))
+}
+
 // Items is the resolver for the items field.
 func (r *queryResolver) Items(ctx context.Context, filter *Filter) ([]*Item, error) {
 	var (
@@ -96,6 +174,46 @@ func (r *queryResolver) Items(ctx context.Context, filter *Filter) ([]*Item, err
 		}
 
 		itemRes = append(itemRes, temp)
+	}
+
+	return itemRes, nil
+}
+
+// Item is the resolver for the item field.
+func (r *queryResolver) Item(ctx context.Context, id string) (*Item, error) {
+	var (
+		itemRes *Item
+	)
+
+	item, err := r.itemUsecase.GetByID(ctx, id)
+
+	if err != nil {
+		if err.Error() == "record not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+		return nil, nil
+	}
+
+	itemRes = &Item{
+		ID:       item.ID.String(),
+		Name:     &item.Name,
+		Rating:   &item.Rating,
+		Category: (*Category)(&item.Category),
+		Image:    &item.Image,
+		Reputation: &Reputation{
+			Badge: &item.ReputationBadge,
+			Value: &item.ReputationValue,
+		},
+		ReputationBadge: &item.ReputationBadge,
+		Price:           &item.Price,
+		Availibility:    &item.Availibility,
+		Creator: &User{
+			ID:       item.Creator.ID.String(),
+			Username: &item.Creator.Username,
+			Email:    &item.Creator.Email,
+		},
 	}
 
 	return itemRes, nil

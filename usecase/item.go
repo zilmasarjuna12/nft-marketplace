@@ -14,6 +14,9 @@ type (
 	IItemUsecase interface {
 		Get(ctx context.Context, query entity.ItemQuery) (items []entity.Item, err error)
 		Create(ctx context.Context, creatorId string, input entity.ItemInput) (item *entity.Item, err error)
+		GetByID(ctx context.Context, itemID string) (item *entity.Item, err error)
+		Update(ctx context.Context, itemID string, input entity.ItemUpdate) (item *entity.Item, err error)
+		Delete(ctx context.Context, itemID string) (err error)
 	}
 
 	itemUsecase struct {
@@ -61,6 +64,42 @@ func (usecase *itemUsecase) Create(ctx context.Context, creatorId string, input 
 
 	if err != nil {
 		log.Printf("Got usecase.itemMysql.Save Error %v", err)
+
+		return
+	}
+
+	return
+}
+
+func (usecase *itemUsecase) GetByID(ctx context.Context, itemID string) (item *entity.Item, err error) {
+	item, err = usecase.itemMysql.GetByID(ctx, itemID)
+
+	if err != nil {
+		log.Printf("Got usecase.itemMysql.GetByID Error %v", err)
+
+		return
+	}
+
+	return
+}
+
+func (usecase *itemUsecase) Update(ctx context.Context, itemID string, input entity.ItemUpdate) (item *entity.Item, err error) {
+	item, err = usecase.itemMysql.Update(ctx, itemID, input)
+
+	if err != nil {
+		log.Printf("Got usecase.itemMysql.Save Error %v", err)
+
+		return
+	}
+
+	return
+}
+
+func (usecase *itemUsecase) Delete(ctx context.Context, itemID string) (err error) {
+	err = usecase.itemMysql.Delete(ctx, itemID)
+
+	if err != nil {
+		log.Printf("Got usecase.itemMysql.Delete Error %v", err)
 
 		return
 	}
