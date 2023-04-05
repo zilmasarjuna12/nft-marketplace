@@ -11,6 +11,7 @@ import (
 type (
 	IItemMysql interface {
 		Get(ctx context.Context, query entity.ItemQuery) (item []entity.Item, err error)
+		Save(ctx context.Context, item *entity.Item) (*entity.Item, error)
 	}
 
 	itemMysql struct {
@@ -35,4 +36,15 @@ func (repo *itemMysql) Get(ctx context.Context, query entity.ItemQuery) (items [
 	}
 
 	return
+}
+
+func (repo *itemMysql) Save(ctx context.Context, item *entity.Item) (*entity.Item, error) {
+	db := repo.DB.Debug().WithContext(ctx)
+
+	if err := db.Save(&item).Error; err != nil {
+		log.Printf("Failed Find With Error : %v", err)
+		return nil, err
+	}
+
+	return item, nil
 }

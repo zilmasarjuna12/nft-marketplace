@@ -12,10 +12,10 @@ const (
 	NOT_FOUND     = "NOT_FOUND"
 )
 
-func AddInputError(ctx context.Context, invalidInput map[string]interface{}) {
+func AddInputError(ctx context.Context, invalidInput interface{}) {
 	graphql.AddError(ctx, &gqlerror.Error{
 		Path:    graphql.GetPath(ctx),
-		Message: "Multiple input are invalid",
+		Message: "input are invalid",
 		Extensions: map[string]interface{}{
 			"code":         "INVALID_INPUT",
 			"invalidInput": invalidInput,

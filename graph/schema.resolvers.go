@@ -10,6 +10,53 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+// CreateItem is the resolver for the createItem field.
+func (r *mutationResolver) CreateItem(ctx context.Context, creatorID string, input CreateItem) (*Item, error) {
+	var (
+		itemRes *Item
+	)
+
+	queryInput := NewItemInput(input)
+
+	errs := queryInput.Validate(ctx)
+
+	if errs != nil {
+		return nil, nil
+	}
+
+	item, err := r.itemUsecase.Create(ctx, creatorID, queryInput.ItemInput)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+	}
+
+	itemRes = &Item{
+		ID:       item.ID.String(),
+		Name:     &item.Name,
+		Rating:   &item.Rating,
+		Category: (*Category)(&item.Category),
+		Image:    &item.Image,
+		Reputation: &Reputation{
+			Badge: &item.ReputationBadge,
+			Value: &item.ReputationValue,
+		},
+		ReputationBadge: &item.ReputationBadge,
+		Price:           &item.Price,
+		Availibility:    &item.Availibility,
+		Creator: &User{
+			ID:       item.Creator.ID.String(),
+			Username: &item.Creator.Username,
+			Email:    &item.Creator.Email,
+		},
+	}
+
+	return itemRes, nil
+}
+
 // Items is the resolver for the items field.
 func (r *queryResolver) Items(ctx context.Context, filter *Filter) ([]*Item, error) {
 	var (
@@ -54,7 +101,11 @@ func (r *queryResolver) Items(ctx context.Context, filter *Filter) ([]*Item, err
 	return itemRes, nil
 }
 
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

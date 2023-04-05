@@ -47,6 +47,20 @@ input Filter {
   creator_id: [ID!]
 }
 
+input CreateItem {
+  name: String
+  rating: Int
+  category: String
+  image: String
+  reputation: Int
+  price: Int
+  availibility: Int 
+}
+
 type Query {
   items(filter: Filter): [Item!]!
+}
+
+type Mutation {
+  createItem(creatorId: ID!, input: CreateItem!): Item!
 }

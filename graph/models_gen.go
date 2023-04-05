@@ -8,6 +8,16 @@ import (
 	"strconv"
 )
 
+type CreateItem struct {
+	Name         *string `json:"name,omitempty"`
+	Rating       *int    `json:"rating,omitempty"`
+	Category     *string `json:"category,omitempty"`
+	Image        *string `json:"image,omitempty"`
+	Reputation   *int    `json:"reputation,omitempty"`
+	Price        *int    `json:"price,omitempty"`
+	Availibility *int    `json:"availibility,omitempty"`
+}
+
 type Filter struct {
 	Rating          *int        `json:"rating,omitempty"`
 	ReputationBadge *string     `json:"reputationBadge,omitempty"`

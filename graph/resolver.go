@@ -23,12 +23,12 @@ func NewResolver() Config {
 		log.Fatalf("ERROR: %s", err.Error())
 	}
 
-	itemPostgres := repository_mysql.NewItemMysql(db)
+	itemMysql := repository_mysql.NewItemMysql(db)
 
-	itemUsecase := usecase.NewItemUsecase(itemPostgres)
+	itemUsecase := usecase.NewItemUsecase(itemMysql)
 
 	r := Resolver{
-		itemUsecase: usecase.NewItemUsecase(itemUsecase),
+		itemUsecase: itemUsecase,
 	}
 
 	return Config{
