@@ -2,9 +2,11 @@ package repository_mysql
 
 import (
 	"context"
+	"errors"
 	"log"
 	"nft-marketplace/entity"
 
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +17,7 @@ type (
 		Update(ctx context.Context, itemID string, input entity.ItemUpdate) (*entity.Item, error)
 		GetByID(ctx context.Context, itemID string) (item *entity.Item, err error)
 		Delete(ctx context.Context, itemID string) (err error)
+		Purchased(ctx context.Context, buyerID, itemID string) (err error)
 	}
 
 	itemMysql struct {
@@ -84,10 +87,68 @@ func (repo *itemMysql) GetByID(ctx context.Context, id string) (item *entity.Ite
 func (repo *itemMysql) Delete(ctx context.Context, itemID string) (err error) {
 	db := repo.DB.Debug().WithContext(ctx)
 
+	var transaction []entity.Transaction
+
+	if err = db.Where("item_id = ?", itemID).Find(&transaction).Error; err != nil {
+		log.Printf("Failed Delete With Error : %v", err)
+
+		return
+	}
+
+	if len(transaction) > 0 {
+		err = errors.New("not acceptable")
+		return
+	}
+
 	if err = db.Where("id = ?", itemID).Delete(&entity.Item{}).Error; err != nil {
 		log.Printf("Failed Delete With Error : %v", err)
 		return
 	}
+
+	return
+}
+
+func (repo *itemMysql) Purchased(ctx context.Context, buyerID, itemID string) (err error) {
+	tx := repo.DB.Debug().WithContext(ctx).Begin()
+
+	var (
+		item        *entity.Item
+		transaction *entity.Transaction
+	)
+
+	// save transaction
+	buyerUuid, _ := uuid.FromString(buyerID)
+	itemUuid, _ := uuid.FromString(itemID)
+
+	transaction = &entity.Transaction{
+		BuyerID: buyerUuid,
+		ItemID:  itemUuid,
+	}
+
+	if err = tx.Save(&transaction).Error; err != nil {
+		tx.Rollback()
+
+		log.Printf("Failed Transaction Save With Error : %v", err)
+		return
+	}
+
+	// update availibility
+	if err := tx.Where("id = ?", itemID).First(&item).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Failed First With Error : %v", err)
+		return err
+	}
+
+	// decrement
+	item.DecrementAvailibility()
+
+	if err := tx.Save(&item).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Failed Save With Error : %v", err)
+		return err
+	}
+
+	tx.Commit()
 
 	return
 }

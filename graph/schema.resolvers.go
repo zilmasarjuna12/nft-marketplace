@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -114,9 +113,12 @@ func (r *mutationResolver) DeleteItem(ctx context.Context, id string) (*Message,
 	err := r.itemUsecase.Delete(ctx, id)
 
 	if err != nil {
-		if err.Error() == "not found" {
+		switch err.Error() {
+		case "not found":
 			AddError(ctx, NOT_FOUND)
-		} else {
+		case "not acceptable":
+			AddError(ctx, NOT_ACCEPTABLE)
+		default:
 			graphql.AddErrorf(ctx, "Error %v", err)
 		}
 
@@ -132,7 +134,32 @@ func (r *mutationResolver) DeleteItem(ctx context.Context, id string) (*Message,
 
 // PurchaseItem is the resolver for the purchaseItem field.
 func (r *mutationResolver) PurchaseItem(ctx context.Context, buyID string, itemID string) (*Message, error) {
-	panic(fmt.Errorf("not implemented: PurchaseItem - purchaseItem"))
+	var (
+		messageRes *Message
+	)
+
+	err := r.itemUsecase.Purchased(ctx, buyID, itemID)
+
+	if err != nil {
+		switch err.Error() {
+		case "empty item":
+			AddError(ctx, ITEM_EMPTY)
+		case "user not found":
+			AddError(ctx, USER_NOT_NOUND)
+		case "item not found":
+			AddError(ctx, NOT_FOUND)
+		default:
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+
+		return nil, nil
+	}
+
+	messageRes = &Message{
+		Message: "Success",
+	}
+
+	return messageRes, nil
 }
 
 // Items is the resolver for the items field.

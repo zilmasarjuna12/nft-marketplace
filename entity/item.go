@@ -83,6 +83,14 @@ func (item *Item) SetReputationBadge() {
 	}
 }
 
+func (item *Item) DecrementAvailibility() {
+	item.Availibility = item.Availibility - 1
+}
+
+func (item *Item) IsAvailable() bool {
+	return item.Availibility > 0
+}
+
 func (item *Item) Edit(input ItemUpdate) {
 	if input.Name != nil {
 		item.Name = *input.Name

@@ -24,8 +24,9 @@ func NewResolver() Config {
 	}
 
 	itemMysql := repository_mysql.NewItemMysql(db)
+	userMysql := repository_mysql.NewUserMysql(db)
 
-	itemUsecase := usecase.NewItemUsecase(itemMysql)
+	itemUsecase := usecase.NewItemUsecase(itemMysql, userMysql)
 
 	r := Resolver{
 		itemUsecase: itemUsecase,
