@@ -6,6 +6,7 @@ api for nft market place
 - Mysql
 
 ## Running Aplication
+running this script and aplication will be runnning in port 8080. 
 ```shell script
 source ./start.sh
 ```
