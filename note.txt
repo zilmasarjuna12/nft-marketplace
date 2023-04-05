@@ -1,0 +1,5 @@
+Note:
+1. in feature delete i give some validation when we want to delete purchased item because i think item can't be delete after purchased, especially in this case in nft marketplace which to my knowledge is once we create it can't be deleted.
+2. i give query users list so that it can be used to see id when you want to add, and purchased items
+3. `What happens if a user wants to check an item that is not of his property? Can you
+provide a solution for this case?` I think we can add a transactions table to reference which items the user has purchased. so that it could be used to display items he had not purchased yet.
