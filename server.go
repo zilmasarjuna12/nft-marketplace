@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"nft-marketplace/graph"
+	"nft-marketplace/migrations"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -26,6 +27,8 @@ func init() {
 }
 
 func main() {
+	migrations.Migration()
+
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.NewResolver()))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		rc := graphql.GetFieldContext(ctx)
