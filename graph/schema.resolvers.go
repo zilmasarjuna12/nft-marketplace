@@ -6,12 +6,78 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"nft-marketplace/entity"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
+type itemQuery struct {
+	entity.ItemQuery
+}
+
+func NewItemQuery(filter *Filter) itemQuery {
+	i := itemQuery{}
+
+	if filter != nil {
+		i.ItemQuery = entity.ItemQuery{
+			Rating:          filter.Rating,
+			ReputationBadge: filter.ReputationBadge,
+			Category:        filter.Category,
+		}
+
+		if filter.Availability != nil {
+			i.ItemQuery.Availability = &entity.RangeInput{
+				Gte: filter.Availability.Gte,
+				Lte: filter.Availability.Lte,
+			}
+		}
+	}
+
+	return i
+}
+
 // Items is the resolver for the items field.
-func (r *queryResolver) Items(ctx context.Context) ([]*Item, error) {
-	panic(fmt.Errorf("not implemented: Items - items"))
+func (r *queryResolver) Items(ctx context.Context, filter *Filter) ([]*Item, error) {
+	var (
+		itemRes []*Item
+	)
+
+	query := NewItemQuery(filter)
+
+	items, err := r.itemUsecase.Get(ctx, query.ItemQuery)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+	}
+
+	for _, item := range items {
+		temp := &Item{
+			ID:       item.ID.String(),
+			Name:     &item.Name,
+			Rating:   &item.Rating,
+			Category: (*Category)(&item.Category),
+			Reputation: &Reputation{
+				Badge: &item.ReputationBadge,
+				Value: &item.ReputationValue,
+			},
+			ReputationBadge: &item.ReputationBadge,
+			Price:           &item.Price,
+			Availibility:    &item.Availibility,
+			Creator: &User{
+				ID:       item.Creator.ID.String(),
+				Username: &item.Creator.Username,
+				Email:    &item.Creator.Email,
+			},
+		}
+
+		itemRes = append(itemRes, temp)
+	}
+
+	return itemRes, nil
 }
 
 // Query returns QueryResolver implementation.

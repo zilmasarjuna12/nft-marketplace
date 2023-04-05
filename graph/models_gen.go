@@ -8,16 +8,35 @@ import (
 	"strconv"
 )
 
+type Filter struct {
+	Rating          *int        `json:"rating,omitempty"`
+	ReputationBadge *string     `json:"reputationBadge,omitempty"`
+	Category        *string     `json:"category,omitempty"`
+	Availability    *RangeInput `json:"availability,omitempty"`
+	CreatorID       []string    `json:"creator_id,omitempty"`
+}
+
 type Item struct {
-	ID           string    `json:"id"`
-	Name         *string   `json:"name,omitempty"`
-	Rating       *int      `json:"rating,omitempty"`
-	Category     *Category `json:"category,omitempty"`
-	Image        *string   `json:"image,omitempty"`
-	Price        *int      `json:"price,omitempty"`
-	Availibility *int      `json:"availibility,omitempty"`
-	Reputation   *int      `json:"Reputation,omitempty"`
-	Creator      *User     `json:"Creator,omitempty"`
+	ID              string      `json:"id"`
+	Name            *string     `json:"name,omitempty"`
+	Rating          *int        `json:"rating,omitempty"`
+	Category        *Category   `json:"category,omitempty"`
+	Image           *string     `json:"image,omitempty"`
+	Price           *int        `json:"price,omitempty"`
+	Availibility    *int        `json:"availibility,omitempty"`
+	Reputation      *Reputation `json:"reputation,omitempty"`
+	ReputationBadge *string     `json:"reputationBadge,omitempty"`
+	Creator         *User       `json:"creator,omitempty"`
+}
+
+type RangeInput struct {
+	Gte *int `json:"gte,omitempty"`
+	Lte *int `json:"lte,omitempty"`
+}
+
+type Reputation struct {
+	Badge *string `json:"badge,omitempty"`
+	Value *int    `json:"Value,omitempty"`
 }
 
 type User struct {

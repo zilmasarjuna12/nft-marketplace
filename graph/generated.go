@@ -44,19 +44,25 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Item struct {
-		Availibility func(childComplexity int) int
-		Category     func(childComplexity int) int
-		Creator      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Image        func(childComplexity int) int
-		Name         func(childComplexity int) int
-		Price        func(childComplexity int) int
-		Rating       func(childComplexity int) int
-		Reputation   func(childComplexity int) int
+		Availibility    func(childComplexity int) int
+		Category        func(childComplexity int) int
+		Creator         func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Image           func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Price           func(childComplexity int) int
+		Rating          func(childComplexity int) int
+		Reputation      func(childComplexity int) int
+		ReputationBadge func(childComplexity int) int
 	}
 
 	Query struct {
-		Items func(childComplexity int) int
+		Items func(childComplexity int, filter *Filter) int
+	}
+
+	Reputation struct {
+		Badge func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 
 	User struct {
@@ -67,7 +73,7 @@ type ComplexityRoot struct {
 }
 
 type QueryResolver interface {
-	Items(ctx context.Context) ([]*Item, error)
+	Items(ctx context.Context, filter *Filter) ([]*Item, error)
 }
 
 type executableSchema struct {
@@ -99,7 +105,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Item.Category(childComplexity), true
 
-	case "Item.Creator":
+	case "Item.creator":
 		if e.complexity.Item.Creator == nil {
 			break
 		}
@@ -141,19 +147,45 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Item.Rating(childComplexity), true
 
-	case "Item.Reputation":
+	case "Item.reputation":
 		if e.complexity.Item.Reputation == nil {
 			break
 		}
 
 		return e.complexity.Item.Reputation(childComplexity), true
 
+	case "Item.reputationBadge":
+		if e.complexity.Item.ReputationBadge == nil {
+			break
+		}
+
+		return e.complexity.Item.ReputationBadge(childComplexity), true
+
 	case "Query.items":
 		if e.complexity.Query.Items == nil {
 			break
 		}
 
-		return e.complexity.Query.Items(childComplexity), true
+		args, err := ec.field_Query_items_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Items(childComplexity, args["filter"].(*Filter)), true
+
+	case "Reputation.badge":
+		if e.complexity.Reputation.Badge == nil {
+			break
+		}
+
+		return e.complexity.Reputation.Badge(childComplexity), true
+
+	case "Reputation.Value":
+		if e.complexity.Reputation.Value == nil {
+			break
+		}
+
+		return e.complexity.Reputation.Value(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -183,7 +215,10 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputFilter,
+		ec.unmarshalInputRangeInput,
+	)
 	first := true
 
 	switch rc.Operation.Operation {
@@ -259,6 +294,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_items_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *Filter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOFilter2ᚖnftᚑmarketplaceᚋgraphᚐFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -590,8 +640,8 @@ func (ec *executionContext) fieldContext_Item_availibility(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Item_Reputation(ctx context.Context, field graphql.CollectedField, obj *Item) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Item_Reputation(ctx, field)
+func (ec *executionContext) _Item_reputation(ctx context.Context, field graphql.CollectedField, obj *Item) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Item_reputation(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -613,26 +663,73 @@ func (ec *executionContext) _Item_Reputation(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*Reputation)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReputation2ᚖnftᚑmarketplaceᚋgraphᚐReputation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Item_Reputation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Item_reputation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Item",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "badge":
+				return ec.fieldContext_Reputation_badge(ctx, field)
+			case "Value":
+				return ec.fieldContext_Reputation_Value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Reputation", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Item_Creator(ctx context.Context, field graphql.CollectedField, obj *Item) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Item_Creator(ctx, field)
+func (ec *executionContext) _Item_reputationBadge(ctx context.Context, field graphql.CollectedField, obj *Item) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Item_reputationBadge(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReputationBadge, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Item_reputationBadge(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Item",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Item_creator(ctx context.Context, field graphql.CollectedField, obj *Item) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Item_creator(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -659,7 +756,7 @@ func (ec *executionContext) _Item_Creator(ctx context.Context, field graphql.Col
 	return ec.marshalOUser2ᚖnftᚑmarketplaceᚋgraphᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Item_Creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Item_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Item",
 		Field:      field,
@@ -694,7 +791,7 @@ func (ec *executionContext) _Query_items(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Items(rctx)
+		return ec.resolvers.Query().Items(rctx, fc.Args["filter"].(*Filter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -733,13 +830,26 @@ func (ec *executionContext) fieldContext_Query_items(ctx context.Context, field 
 				return ec.fieldContext_Item_price(ctx, field)
 			case "availibility":
 				return ec.fieldContext_Item_availibility(ctx, field)
-			case "Reputation":
-				return ec.fieldContext_Item_Reputation(ctx, field)
-			case "Creator":
-				return ec.fieldContext_Item_Creator(ctx, field)
+			case "reputation":
+				return ec.fieldContext_Item_reputation(ctx, field)
+			case "reputationBadge":
+				return ec.fieldContext_Item_reputationBadge(ctx, field)
+			case "creator":
+				return ec.fieldContext_Item_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Item", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_items_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -868,6 +978,88 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Reputation_badge(ctx context.Context, field graphql.CollectedField, obj *Reputation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Reputation_badge(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Badge, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Reputation_badge(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Reputation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Reputation_Value(ctx context.Context, field graphql.CollectedField, obj *Reputation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Reputation_Value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Reputation_Value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Reputation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2772,6 +2964,102 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputFilter(ctx context.Context, obj interface{}) (Filter, error) {
+	var it Filter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"rating", "reputationBadge", "category", "availability", "creator_id"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "rating":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rating"))
+			it.Rating, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reputationBadge":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reputationBadge"))
+			it.ReputationBadge, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "category":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			it.Category, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "availability":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("availability"))
+			it.Availability, err = ec.unmarshalORangeInput2ᚖnftᚑmarketplaceᚋgraphᚐRangeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "creator_id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creator_id"))
+			it.CreatorID, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRangeInput(ctx context.Context, obj interface{}) (RangeInput, error) {
+	var it RangeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"gte", "lte"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "gte":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
+			it.Gte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lte":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
+			it.Lte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2821,13 +3109,17 @@ func (ec *executionContext) _Item(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = ec._Item_availibility(ctx, field, obj)
 
-		case "Reputation":
+		case "reputation":
 
-			out.Values[i] = ec._Item_Reputation(ctx, field, obj)
+			out.Values[i] = ec._Item_reputation(ctx, field, obj)
 
-		case "Creator":
+		case "reputationBadge":
 
-			out.Values[i] = ec._Item_Creator(ctx, field, obj)
+			out.Values[i] = ec._Item_reputationBadge(ctx, field, obj)
+
+		case "creator":
+
+			out.Values[i] = ec._Item_creator(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -2893,6 +3185,35 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var reputationImplementors = []string{"Reputation"}
+
+func (ec *executionContext) _Reputation(ctx context.Context, sel ast.SelectionSet, obj *Reputation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reputationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Reputation")
+		case "badge":
+
+			out.Values[i] = ec._Reputation_badge(ctx, field, obj)
+
+		case "Value":
+
+			out.Values[i] = ec._Reputation_Value(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -3653,6 +3974,52 @@ func (ec *executionContext) marshalOCategory2ᚖnftᚑmarketplaceᚋgraphᚐCate
 	return v
 }
 
+func (ec *executionContext) unmarshalOFilter2ᚖnftᚑmarketplaceᚋgraphᚐFilter(ctx context.Context, v interface{}) (*Filter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -3667,6 +4034,21 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalORangeInput2ᚖnftᚑmarketplaceᚋgraphᚐRangeInput(ctx context.Context, v interface{}) (*RangeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRangeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOReputation2ᚖnftᚑmarketplaceᚋgraphᚐReputation(ctx context.Context, sel ast.SelectionSet, v *Reputation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Reputation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

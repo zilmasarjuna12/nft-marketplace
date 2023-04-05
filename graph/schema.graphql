@@ -10,9 +10,10 @@ type Item {
   image: String
   price: Int
   availibility: Int
-  Reputation: Int
+  reputation: Reputation
+  reputationBadge: String
 
-  Creator: User
+  creator: User
 }
 
 enum Category {
@@ -22,12 +23,30 @@ enum Category {
   animation
 }
 
+type Reputation {
+  badge: String
+  Value: Int
+}
+
 type User {
   id: ID!
   username: String
   email: String
 }
 
+input RangeInput {
+  gte: Int
+  lte: Int
+}
+
+input Filter {
+  rating: Int
+  reputationBadge: String
+  category: String
+  availability: RangeInput
+  creator_id: [ID!]
+}
+
 type Query {
-  items: [Item!]!
+  items(filter: Filter): [Item!]!
 }
