@@ -33,7 +33,29 @@ func (repo *itemMysql) Get(ctx context.Context, query entity.ItemQuery) (items [
 	db := repo.DB.Debug().WithContext(ctx)
 
 	if query.Category != nil {
-		db = db.Where("category = ?", query.Category)
+		db = db.Where("category = ?", *query.Category)
+	}
+
+	if query.Rating != nil {
+		db = db.Where("rating = ?", *query.Rating)
+	}
+
+	if query.ReputationBadge != nil {
+		db = db.Where("reputation_badge = ?", *query.ReputationBadge)
+	}
+
+	if query.Availability != nil {
+		if query.Availability.Gte != nil {
+			db = db.Where("availibility > ?", *query.Availability.Gte)
+		}
+
+		if query.Availability.Lte != nil {
+			db = db.Where("availibility < ?", *query.Availability.Lte)
+		}
+	}
+
+	if len(query.CreatorID) > 0 {
+		db = db.Where("creator_id IN ", query.CreatorID)
 	}
 
 	if err = db.Preload("Creator").Find(&items).Error; err != nil {
