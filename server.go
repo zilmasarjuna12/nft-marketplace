@@ -41,5 +41,7 @@ func main() {
 	http.Handle("/", playground.Handler("Nft", "/query"))
 	http.Handle("/query", srv)
 
+	log.Println("running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
