@@ -14,6 +14,7 @@ import (
 
 type Resolver struct {
 	itemUsecase usecase.IItemUsecase
+	userUsecase usecase.IUserUsecase
 }
 
 func NewResolver() Config {
@@ -27,9 +28,11 @@ func NewResolver() Config {
 	userMysql := repository_mysql.NewUserMysql(db)
 
 	itemUsecase := usecase.NewItemUsecase(itemMysql, userMysql)
+	userUsecase := usecase.NewUserUsecase(userMysql)
 
 	r := Resolver{
 		itemUsecase: itemUsecase,
+		userUsecase: userUsecase,
 	}
 
 	return Config{

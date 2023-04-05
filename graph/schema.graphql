@@ -70,6 +70,7 @@ input UpdateItem {
 type Query {
   items(filter: Filter): [Item!]!
   item(id: ID!): Item
+  users: [User!]!
 }
 
 type Message {

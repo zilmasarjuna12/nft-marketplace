@@ -246,6 +246,35 @@ func (r *queryResolver) Item(ctx context.Context, id string) (*Item, error) {
 	return itemRes, nil
 }
 
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*User, error) {
+	var (
+		userRes []*User
+	)
+
+	users, err := r.userUsecase.Get(ctx)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			AddError(ctx, NOT_FOUND)
+		} else {
+			graphql.AddErrorf(ctx, "Error %v", err)
+		}
+	}
+
+	for _, user := range users {
+		temp := &User{
+			ID:       user.ID.String(),
+			Username: &user.Username,
+			Email:    &user.Email,
+		}
+
+		userRes = append(userRes, temp)
+	}
+
+	return userRes, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
